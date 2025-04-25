@@ -60,7 +60,22 @@ const userSchema = new mongoose.Schema({
     {
         type: String,
         required: true
-    }
+    },
+    physicalInjuries:
+        [{
+            type: String,
+            required: true
+        }],
+    allergies:
+        [{
+            type: String,
+            required: true
+        }],
+    medicalConditions:
+        [{
+            type: String,
+            required: true
+        }]
 
 });
 
