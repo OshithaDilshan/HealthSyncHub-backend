@@ -85,8 +85,9 @@ exports.login = async (req, res, next) => {
 exports.getUserProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
+        const profile = await UserProfile.findOne({ user: req.user.id });
         
-        if (user) {
+        if (user && profile) {
             res.json({
                 _id: user._id,
                 username: user.username,
@@ -94,10 +95,10 @@ exports.getUserProfile = async (req, res, next) => {
                 lastName: user.lastName,
                 email: user.email,
                 dateOfBirth: user.dateOfBirth,
-                gender: user.gender,
-                height: user.height,
-                weight: user.weight,
-                healthGoals: user.healthGoals,
+                gender: profile.gender,
+                height: profile.height,
+                weight: profile.weight,
+                healthGoals: profile.healthGoals,
                 role: user.role
             });
         } else {
@@ -210,35 +211,50 @@ exports.updateUserProfile = async (req, res, next) => {
             healthGoals 
         } = req.body;
 
-        const user = await User.findById(req.user.id);
-        
+        const user = await User.findById(req.user.id).select('-password');
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
+        const userProfile = await UserProfile.findOne({ user: req.user.id });
 
         user.firstName = firstName || user.firstName;
         user.lastName = lastName || user.lastName;
         
         if (dateOfBirth) user.dateOfBirth = dateOfBirth;
-        if (gender) user.gender = gender;
-        if (height) user.height = height;
-        if (weight) user.weight = weight;
-        if (healthGoals !== undefined) user.healthGoals = healthGoals;
+        if (gender) {
+            user.gender = gender;
+            userProfile.gender = gender;
+        }
+        if (height) {
+            user.height = height;
+            userProfile.height = height;
+        }
+        if (weight) {
+            user.weight = weight;
+            userProfile.weight = weight;
+        }
+        if (healthGoals !== undefined) {
+            user.healthGoals = healthGoals;
+            userProfile.healthGoals = healthGoals;
+        }
 
-        const updatedUser = await user.save();
+        await user.save();
+        await userProfile.save();
 
         const userResponse = {
-            _id: updatedUser._id,
-            username: updatedUser.username,
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            email: updatedUser.email,
-            dateOfBirth: updatedUser.dateOfBirth,
-            gender: updatedUser.gender,
-            height: updatedUser.height,
-            weight: updatedUser.weight,
-            healthGoals: updatedUser.healthGoals,
-            role: updatedUser.role
+            _id: user._id,
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            dateOfBirth: user.dateOfBirth,
+            gender: userProfile.gender,
+            height: userProfile.height,
+            weight: userProfile.weight,
+            healthGoals: userProfile.healthGoals,
+            role: user.role
         };
 
         res.status(200).json(userResponse);

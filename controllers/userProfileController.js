@@ -82,19 +82,90 @@ exports.createOrUpdateProfile = async (req, res, next) => {
 
 exports.getMyProfile = async (req, res, next) => {
     try {
+        // Find the user profile
         const profile = await UserProfile.findOne({ user: req.user.id });
 
-        if (!profile) {
-            return res.status(200).json({
-                success: true,
-                message: 'Profile not found',
+        // Find the user data
+        const userData = await User.findById(req.user.id).select('-password');
+
+        if (!userData) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
                 data: null
             });
         }
 
+        if (!profile) {
+            // Return just the user data if no profile exists
+            return res.status(200).json({
+                success: true,
+                message: 'Profile not found, but user exists',
+                data: {
+                    user: userData
+                }
+            });
+        }
+
+        // Combine user and profile data
+        const combinedData = {
+            user: userData,
+            profile: profile
+        };
+
         res.status(200).json({
             success: true,
-            data: profile
+            data: combinedData
+        });
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
+// Get user by ID and profile
+exports.getUserProfileById = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        
+        // Find the user profile
+        const profile = await UserProfile.findOne({ user: userId });
+        
+        // Find the user data
+        const userData = await User.findById(userId).select('-password');
+
+        if (!userData) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+                data: null
+            });
+        }
+
+        if (!profile) {
+            // Return just the user data if no profile exists
+            return res.status(200).json({
+                success: true,
+                message: 'Profile not found, but user exists',
+                data: {
+                    user: userData
+                }
+            });
+        }
+
+        // Combine user and profile data
+        const combinedData = {
+            user: userData,
+            profile: profile
+        };
+
+        res.status(200).json({
+            success: true,
+            data: combinedData
         });
     } catch (error) {
         console.error('Error fetching profile:', error);

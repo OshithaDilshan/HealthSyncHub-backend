@@ -10,7 +10,7 @@ const app = express();
 
 // CORS Configuration
 const corsOptions = {
-    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+    origin: '*',  // Allow all origins for development
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override'],
     credentials: true,

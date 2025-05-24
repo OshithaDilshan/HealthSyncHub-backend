@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
 const { protect } = require('../middleware/authMiddleware');
-const { createOrUpdateProfile, getMyProfile, updatePrimaryGoal, updateActivityLevel, updateDietType, updateAllergies, updateDiseases, updateBudget } = require('../controllers/userProfileController');
+const { createOrUpdateProfile, getMyProfile, getUserProfileById, updatePrimaryGoal, updateActivityLevel, updateDietType, updateAllergies, updateDiseases, updateBudget } = require('../controllers/userProfileController');
 
 router.post(
     '/',
@@ -23,6 +23,28 @@ router.post(
 
 
 router.get('/me', protect, getMyProfile);
+
+// Update user profile (PUT endpoint)
+router.put(
+    '/',
+    protect,
+    [
+        check('firstName', 'First name must be a string').optional().isString().trim(),
+        check('lastName', 'Last name must be a string').optional().isString().trim(),
+        check('email', 'Email must be valid').optional().isEmail(),
+        check('gender', 'Gender must be valid').optional().isIn(['male', 'female', 'other', 'prefer-not-to-say']),
+        check('dateOfBirth', 'Date of birth must be valid').optional().isISO8601().toDate(),
+        check('weight', 'Weight must be valid').optional().isFloat({ min: 30, max: 300 }),
+        check('height', 'Height must be valid').optional().isFloat({ min: 100, max: 250 }),
+        check('healthGoals', 'Health goals must be a string').optional().isString(),
+        check('allergies', 'Allergies must be a string').optional().isString(),
+        check('diseases', 'Diseases must be a string').optional().isString()
+    ],
+    createOrUpdateProfile
+);
+
+// Get user profile by ID
+router.get('/:id', getUserProfileById);
 
 
 const updatePrimaryGoalMiddleware = [
