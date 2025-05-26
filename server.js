@@ -10,7 +10,7 @@ const app = express();
 
 // CORS Configuration
 const corsOptions = {
-    origin: '*',  // Allow all origins for development
+    origin: 'http://127.0.0.1:8080',  // Allow all origins for development
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override'],
     credentials: true,
@@ -28,14 +28,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userProfileRoutes);
 
 // Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://yasithsaparamadu94:bCdcDdlDKnYwYESV@auto-trade-mobile-backe.gkb88.mongodb.net/health_sync_hub?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 app.get('/', (req, res) => {
     res.send('Health Sync Hub API is running');
