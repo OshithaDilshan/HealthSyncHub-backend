@@ -98,7 +98,7 @@ exports.getUserProfile = async (req, res, next) => {
                 gender: profile.gender,
                 height: profile.height,
                 weight: profile.weight,
-                healthGoals: profile.healthGoals,
+                // healthGoals: profile.healthGoals,
                 role: user.role
             });
         } else {
@@ -208,7 +208,7 @@ exports.updateUserProfile = async (req, res, next) => {
             gender, 
             height, 
             weight, 
-            healthGoals 
+            // healthGoals 
         } = req.body;
 
         const user = await User.findById(req.user.id).select('-password');
@@ -235,10 +235,10 @@ exports.updateUserProfile = async (req, res, next) => {
             user.weight = weight;
             userProfile.weight = weight;
         }
-        if (healthGoals !== undefined) {
-            user.healthGoals = healthGoals;
-            userProfile.healthGoals = healthGoals;
-        }
+        // if (healthGoals !== undefined) {
+        //     user.healthGoals = healthGoals;
+        //     userProfile.healthGoals = healthGoals;
+        // }
 
         await user.save();
         await userProfile.save();
@@ -253,7 +253,7 @@ exports.updateUserProfile = async (req, res, next) => {
             gender: userProfile.gender,
             height: userProfile.height,
             weight: userProfile.weight,
-            healthGoals: userProfile.healthGoals,
+            // healthGoals: userProfile.healthGoals,
             role: user.role
         };
 

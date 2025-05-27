@@ -14,7 +14,7 @@ router.post(
             .isFloat({ min: 100, max: 250 }),
         check('weight', 'Weight must be between 30 and 300 kg')
             .isFloat({ min: 30, max: 300 }),
-        check('healthGoals', 'Health goals must be a string').optional().isString(),
+        // check('healthGoals', 'Health goals must be a string').optional().isString(),
         check('firstName', 'First name must be a string').optional().isString().trim(),
         check('lastName', 'Last name must be a string').optional().isString().trim()
     ],
@@ -36,7 +36,7 @@ router.put(
         check('dateOfBirth', 'Date of birth must be valid').optional().isISO8601().toDate(),
         check('weight', 'Weight must be valid').optional().isFloat({ min: 30, max: 300 }),
         check('height', 'Height must be valid').optional().isFloat({ min: 100, max: 250 }),
-        check('healthGoals', 'Health goals must be a string').optional().isString(),
+        // check('healthGoals', 'Health goals must be a string').optional().isString(),
         check('allergies', 'Allergies must be a string').optional().isString(),
         check('diseases', 'Diseases must be a string').optional().isString()
     ],

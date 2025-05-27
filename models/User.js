@@ -55,11 +55,11 @@ const userSchema = new mongoose.Schema({
         max: [300, 'Weight cannot exceed 300kg'],
         required: false
     },
-    healthGoals: {
-        type: String,
-        trim: true,
-        maxlength: [500, 'Health goals cannot exceed 500 characters']
-    },
+    // healthGoals: {
+    //     type: String,
+    //     trim: true,
+    //     maxlength: [500, 'Health goals cannot exceed 500 characters']
+    // },
     role: {
         type: String,
         enum: ['user', 'admin'],
