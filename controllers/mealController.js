@@ -1,5 +1,7 @@
-const Meal = require("../models/meal");
+
+const Meal = require('../models/meal'); 
 const User = require("../models/User"); // Assuming you have this
+const UserProfile = require("../models/UserProfile");
 
 // --- Helper Function ---
 function getDailyIndex(userId, itemsLength) {
@@ -13,11 +15,10 @@ function getDailyIndex(userId, itemsLength) {
     return Math.abs(hash) % itemsLength;
 }
 
-// --- Basic Calorie Calculator ---
-const calculateCaloriesFromUserData = (user) => {
-    const { gender, weight, height, dateOfBirth, activityLevel } = user;
 
-    // Calculate age from date of birth
+const calculateCaloriesFromUserData = (userProfile) => {
+    const { gender, weight, height, dateOfBirth, activityLevel } = userProfile;
+
     const age = calculateAge(dateOfBirth);
 
     if (!age) {
@@ -36,11 +37,11 @@ const calculateCaloriesFromUserData = (user) => {
     return Math.round(bmr * activityFactor);
 };
 
-// Helper function to calculate age from date of birth
+
 function calculateAge(dateOfBirth) {
     const birthDate = new Date(dateOfBirth);
     const currentDate = new Date();
-    const age = currentDate.getFullYear() - birthDate.getFullYear();
+    let age = currentDate.getFullYear() - birthDate.getFullYear();
     const month = currentDate.getMonth() - birthDate.getMonth();
 
     if (month < 0 || (month === 0 && currentDate.getDate() < birthDate.getDate())) {
@@ -57,21 +58,96 @@ const GetTodayMealPlan = async (req, res) => {
     try {
         const user = req.user;
 
-        // Log user data to verify that it contains the required fields
-        console.log("User Data in Meal Plan Controller:", user);
+        if (!user) {
+            return res.status(401).json({ 
+                message: "Authentication required. Please log in to view your meal plan." 
+            });
+        }
+
+        const userProfile = await UserProfile.findOne({ user: user._id });
+
+        if (!userProfile) {
+            return res.status(404).json({
+                message: "User profile not found. Please complete your profile to view your meal plan."
+            });
+        }
+
+       
+        const requiredFields = ['gender', 'weight', 'height', 'dateOfBirth', 'activityLevel'];
+        const missingFields = requiredFields.filter(field => !userProfile[field]);
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                message: `Please complete your profile to get a personalized meal plan. Missing: ${missingFields.join(', ')}`,
+                missingFields
+            });
+        }
+
+      
+        const dailyCalories = calculateCaloriesFromUserData(userProfile);
+
+
+      
+        const mealPlan = await Meal.findOne({
+            "calorieRange.min": { $lte: dailyCalories },
+            "calorieRange.max": { $gte: dailyCalories }
+        });
+
+        if (!mealPlan) {
+            return res.status(404).json({
+                message: "No suitable meal plan found for your calorie needs",
+                dailyCalories,
+                suggestion: "Please contact support to add more meal plan options"
+            });
+        }
+
+       
+        const getRandomItem = (array) => {
+            if (!array || array.length === 0) return null;
+            return array[Math.floor(Math.random() * array.length)];
+        };
+
+      
+        res.json({
+            dailyCalories,
+            mealPlan: {
+                breakfast: mealPlan.breakfast ? [getRandomItem(mealPlan.breakfast)] : [],
+                lunch: mealPlan.lunch ? [getRandomItem(mealPlan.lunch)] : [],
+                dinner: mealPlan.dinner ? [getRandomItem(mealPlan.dinner)] : [],
+                snack: mealPlan.snack ? [getRandomItem(mealPlan.snack)] : []
+            },
+            message: "Daily meal plan generated successfully"
+        });
+
+    } catch (error) {
+        res.status(500).json({ 
+            message: "Server error while generating meal plan",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+
+const GetRandomMealPlan = async (req, res) => {
+    try {
+        const user = req.user;
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Ensure user has the required fields for calorie calculation
-        if (!user.gender || !user.weight || !user.height || !user.dateOfBirth || !user.activityLevel) {
-            return res.status(400).json({ message: "Missing user data for calorie calculation" });
+        const userProfile = await UserProfile.findOne({ user: user._id });
+
+        if (!userProfile) {
+            return res.status(404).json({
+                message: "User profile not found. Please complete your profile to view your meal plan."
+            });
         }
 
-        const dailyCalories = calculateCaloriesFromUserData(user);
+      
+        const dailyCalories = calculateCaloriesFromUserData(userProfile);
 
-        // Find meals based on the daily calorie range
+      
         const meals = await Meal.find({
             "calorieRange.min": { $lte: dailyCalories },
             "calorieRange.max": { $gte: dailyCalories }
@@ -84,16 +160,30 @@ const GetTodayMealPlan = async (req, res) => {
             });
         }
 
-        const index = getDailyIndex(user._id.toString(), meals.length);
-        const todaysMealPlan = meals[index];
+      
+        const randomIndex = Math.floor(Math.random() * meals.length);
+        const selectedMealPlan = meals[randomIndex];
 
-        res.json({ dailyCalories, mealPlan: todaysMealPlan });
+      
+        const response = {
+            dailyCalories,
+            mealPlan: {
+                breakfast: selectedMealPlan.breakfast || [],
+                lunch: selectedMealPlan.lunch || [],
+                dinner: selectedMealPlan.dinner || [],
+                snack: selectedMealPlan.snack || []
+            },
+            generated: new Date().toISOString()
+        };
+
+        res.json(response);
     } catch (error) {
-        console.error("Error in GetTodayMealPlan:", error);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ 
+            message: "Server error while generating random meal plan",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
-
 
 
 
@@ -106,25 +196,58 @@ const GetAllMealData = async (req, res) => {
         const data = await Meal.find();
         return res.json(data);
     } catch (err) {
-        console.error("Error fetching meals:", err);
-        res.status(500).send("Server Error");
+        res.status(500).json({ message: "Error fetching meals" });
+    }
+};
+
+const GetMealsByCalorieRange = async (req, res) => {
+    try {
+        const { min, max } = req.query;
+        
+        if (!min || !max) {
+            return res.status(400).json({ message: "Both min and max calorie values are required" });
+        }
+
+        const meals = await Meal.find({
+            "calorieRange.min": { $lte: parseInt(max) },
+            "calorieRange.max": { $gte: parseInt(min) }
+        });
+
+        res.json({
+            count: meals.length,
+            meals
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching meals by calorie range" });
     }
 };
 
 const GenerateMeal = async (req, res) => {
     try {
-        const response = req.body;
-        console.log(response);
-        await Meal.create(response);
-        res.status(201).send();
+        const mealData = req.body;
+        
+        // Validate required fields
+        if (!mealData.calorieRange || !mealData.calorieRange.min || !mealData.calorieRange.max) {
+            return res.status(400).json({ message: "Calorie range is required" });
+        }
+
+        const newMeal = await Meal.create(mealData);
+        res.status(201).json({ 
+            message: "Meal plan created successfully",
+            meal: newMeal
+        });
     } catch (err) {
-        console.error("Error creating meal:", err);
-        res.status(500).send("Server Error");
+        res.status(500).json({ 
+            message: "Server error while creating meal",
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 };
 
 module.exports = {
     GetAllMealData,
     GenerateMeal,
-    GetTodayMealPlan
+    GetTodayMealPlan,
+    GetRandomMealPlan,
+    GetMealsByCalorieRange
 };
