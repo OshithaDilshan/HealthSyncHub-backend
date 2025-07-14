@@ -6,6 +6,9 @@ const { body, validationResult } = require('express-validator');
 const authRoutes = require('./routes/auth');
 const userProfileRoutes = require('./routes/userProfile');
 const mealRoutes = require("./routes/meal");
+
+const loginHistoryRoutes = require('./routes/loginHistory');  // Add this line
+
 const app = express();
 
 // CORS Configuration
@@ -27,6 +30,9 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userProfileRoutes);
 app.use('/api/meal', mealRoutes);
+
+app.use('/api/login-history', loginHistoryRoutes);
+
 
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;

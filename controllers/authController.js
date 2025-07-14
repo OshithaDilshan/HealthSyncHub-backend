@@ -1,4 +1,7 @@
 const User = require('../models/User');
+
+const { trackLoginDate } = require('../controllers/loginHistoryController');
+
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -73,7 +76,13 @@ exports.login = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 token: generateToken(user._id),
+             
             });
+
+        // Track the login date for the user
+        await trackLoginDate(user._id);
+
+        
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
         }
